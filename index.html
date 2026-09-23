@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Selkärangattomat-matsi</title>
+  <style>
+    :root {
+      --duolingo-green: #58cc02;
+      --duolingo-dark-green: #46a302;
+      --duolingo-blue: #1cb0f6;
+      --duolingo-gray: #e5e5e5;
+      --duolingo-card-border: #e5e5e5;
+      --duolingo-wrong: #ff4b4b;
+      --duolingo-wrong-bg: #ffdfe0;
+      --duolingo-correct-bg: #d7ffb8;
+      --name-col-width: auto;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'din-round', system-ui, -apple-system, sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #3c3c3c;
+      touch-action: manipulation;
+    }
+
+    @keyframes varivilkutus {
+      0% { background-color: #ff4b4b; }
+      20% { background-color: #58cc02; }
+      40% { background-color: #1cb0f6; }
+      60% { background-color: #ffc800; }
+      80% { background-color: #ce82ff; }
+      100% { background-color: #ff4b4b; }
+    }
+
+    body.flashing {
+      animation: varivilkutus 3.5s linear infinite;
+    }
+
+    body.flashing #game-container {
+      background-color: transparent;
+      box-shadow: none;
+    }
+
+    #game-container {
+      width: 100%;
+      max-width: 440px;
+      height: 100%;
+      padding: 8px 10px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.2s ease;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid var(--duolingo-gray);
+      flex-shrink: 0;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      color: var(--duolingo-dark-green);
+      font-weight: 800;
+    }
+
+    .stats {
+      display: flex;
+      gap: 14px;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    #timer { color: var(--duolingo-blue); }
+    #score { color: var(--duolingo-green); }
+
+    #game-board {
+      display: grid;
+      grid-template-columns: 1fr var(--name-col-width, max-content);
+      gap: 6px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      height: 100%;
+    }
+
+    .card {
+      background-color: white;
+      border: 2px solid var(--duolingo-card-border);
+      border-bottom-width: 3px;
+      border-radius: 10px;
+      flex: 1 1 0px;
+      height: 0;
+      min-height: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+      transition: background-color 0.2s, border-color 0.2s;
+      touch-action: manipulation;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card[data-tyyppi="nimi"] {
+      padding: 0 3px;
+    }
+
+    .card-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s ease;
+      opacity: 1;
+      overflow: hidden;
+    }
+
+    .card img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    .card .name {
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.15;
+      pointer-events: none;
+      white-space: nowrap;
+      padding: 0;
+    }
+
+    .card.selected {
+      background-color: #ddf4ff;
+      border-color: var(--duolingo-blue);
+    }
+
+    .card.correct {
+      background-color: var(--duolingo-correct-bg);
+      border-color: var(--duolingo-green);
+    }
+
+    .card.wrong {
+      background-color: var(--duolingo-wrong-bg);
+      border-color: var(--duolingo-wrong);
+    }
+
+    .card.empty {
+      cursor: default;
+      background-color: #fafafa;
+    }
+
+    .card.locked {
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .card.locked[data-tyyppi="kuva"] {
+      background-color: #f5f5f5;
+    }
+
+    .card.locked[data-tyyppi="kuva"] .card-content {
+      opacity: 0.5 !important;
+    }
+
+    #game-over {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      flex: 1;
+      gap: 12px;
+      text-align: center;
+      padding-top: 10px;
+      overflow-y: auto;
+    }
+
+    #result-message {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--duolingo-dark-green);
+      margin: 0;
+      padding: 0 5px;
+    }
+
+    .score-history-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 6px;
+      margin-bottom: 4px;
+      color: #555;
+    }
+
+    #score-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      width: 100%;
+      max-height: 180px;
+      overflow-y: auto;
+      border: 2px solid var(--duolingo-gray);
+      border-radius: 10px;
+      background: #fafafa;
+    }
+
+    #score-list li {
+      padding: 8px 12px;
+      font-size: 16px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--duolingo-gray);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    #score-list li:last-child {
+      border-bottom: none;
+    }
+
+    #score-list li.latest-score {
+      color: var(--duolingo-green);
+      font-weight: 900;
+      background-color: #f0fdf0;
+    }
+
+    #restart-btn {
+      background-color: var(--duolingo-green);
+      color: white;
+      border: none;
+      border-bottom: 4px solid var(--duolingo-dark-green);
+      padding: 12px 28px;
+      border-radius: 14px;
+      font-size: 19px;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-top: auto;
+      margin-bottom: 10px;
+      transition: opacity 0.2s;
+    }
+
+    #restart-btn:active {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
+    }
+
+    #restart-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <header>
+    <h1>Selkärangattomat</h1>
+    <div class="stats">
+      <div id="score">Pisteet: <span id="points">0</span></div>
+      <div id="timer">Aika: <span id="time-left">60</span>s</div>
+    </div>
+  </header>
+
+  <div id="game-board">
+    <div class="column" id="left-column"></div>
+    <div class="column" id="right-column"></div>
+  </div>
+
+  <div id="game-over">
+    <h2 id="result-message"></h2>
+    
+    <div class="score-history-title">Pistetaulukko (Top 20)</div>
+    <ul id="score-list"></ul>
+
+    <button id="restart-btn" onclick="aloitaPeli()">Pelaa uudelleen</button>
+  </div>
+</div>
+
+<script>
+  const kaikkiLajit = [
+    { kuva: "kuvat/Amiraaliperhonen.jpg", nimi: "Amiraaliperhonen" },
+    { kuva: "kuvat/Ampiainen.jpg", nimi: "Ampiainen" },
+    { kuva: "kuvat/Etana.jpg", nimi: "Etana" },
+    { kuva: "kuvat/Hopeatäplä.jpg", nimi: "Hopeatäplä" },
+    { kuva: "kuvat/Hyttysen toukka.jpg", nimi: "Hyttysen toukka" },
+    { kuva: "kuvat/Juotikas.jpg", nimi: "Juotikas" },
+    { kuva: "kuvat/Kimalainen.jpg", nimi: "Kimalainen" },
+    { kuva: "kuvat/Kotilo.jpg", nimi: "Kotilo" },
+    { kuva: "kuvat/Kukkakärpänen.jpg", nimi: "Kukkakärpänen" },
+    { kuva: "kuvat/Lanttuperhonen.jpg", nimi: "Lanttuperhonen" },
+    { kuva: "kuvat/Leppäkerttu.jpg", nimi: "Leppäkerttu" },
+    { kuva: "kuvat/Lukki.jpg", nimi: "Lukki" },
+    { kuva: "kuvat/Mehiläinen.jpg", nimi: "Mehiläinen" },
+    { kuva: "kuvat/Nokkosperhonen.jpg", nimi: "Nokkosperhonen" },
+    { kuva: "kuvat/Ohdakeperhonen.jpg", nimi: "Ohdakeperhonen" },
+    { kuva: "kuvat/Puutiainen.jpg", nimi: "Puutiainen" },
+    { kuva: "kuvat/Siira.jpg", nimi: "Siira" },
+    { kuva: "kuvat/Simpukka.jpg", nimi: "Simpukka" },
+    { kuva: "kuvat/Sitruunaperhonen.jpg", nimi: "Sitruunaperhonen" },
+    { kuva: "kuvat/Sudenkorennon toukka.jpg", nimi: "Sudenkorennon toukka" },
+    { kuva: "kuvat/Sudenkorento.jpg", nimi: "Sudenkorento" },
+    { kuva: "kuvat/Suruvaippa.jpg", nimi: "Suruvaippa" },
+    { kuva: "kuvat/Tesmaperhonen.jpg", nimi: "Tesmaperhonen" },
+    { kuva: "kuvat/Täplärapu.jpg", nimi: "Täplärapu" },
+    { kuva: "kuvat/Vesikirppu.jpg", nimi: "Vesikirppu" },
+    { kuva: "kuvat/Vesimittari.jpg", nimi: "Vesimittari" }
+  ];
+
+  const yhdyssanaMappi = {
+    "Amiraaliperhonen": "Amiraali-<br>perhonen",
+    "Hopeatäplä": "Hopea-<br>täplä",
+    "Kimalainen": "Kima-<br>lainen",
+    "Kukkakärpänen": "Kukka-<br>kärpänen",
+    "Lanttuperhonen": "Lanttu-<br>perhonen",
+    "Leppäkerttu": "Leppä-<br>kerttu",
+    "Mehiläinen": "Mehi-<br>läinen",
+    "Nokkosperhonen": "Nokkos-<br>perhonen",
+    "Ohdakeperhonen": "Ohdake-<br>perhonen",
+    "Puutiainen": "Puuti-<br>ainen",
+    "Sitruunaperhonen": "Sitruuna-<br>perhonen",
+    "Sudenkorento": "Suden-<br>korento",
+    "Suruvaippa": "Suru-<br>vaippa",
+    "Tesmaperhonen": "Tesma-<br>perhonen",
+    "Täplärapu": "Täplä-<br>rapu",
+    "Vesikirppu": "Vesi-<br>kirppu",
+    "Vesimittari": "Vesi-<br>mittari"
+  };
+
+  let nostopakka = [];
+  let valittuVasen = null;
+  let valittuOikea = null;
+  let pisteet = 0;
+  let aikaaJäljellä = 60;
+  let ajastin = null;
+  let peliKaynnissa = false;
+
+  function muotoileNimi(nimi) {
+    if (nimi.includes(' ')) {
+      return nimi.replace(' ', '<br>');
+    }
+    if (yhdyssanaMappi[nimi]) {
+      return yhdyssanaMappi[nimi];
+    }
+    return nimi;
+  }
+
+  function asetaNimisarakkeenKiinteaLeveys() {
+    const dummy = document.createElement('div');
+    dummy.style.position = 'absolute';
+    dummy.style.visibility = 'hidden';
+    dummy.style.whiteSpace = 'nowrap';
+    dummy.style.fontSize = '16px';
+    dummy.style.fontWeight = '700';
+    dummy.style.fontFamily = "'din-round', system-ui, -apple-system, sans-serif";
+    document.body.appendChild(dummy);
+
+    let maxTekstinLeveys = 0;
+    kaikkiLajit.forEach(laji => {
+      const rivit = muotoileNimi(laji.nimi).split('<br>');
+      rivit.forEach(rivi => {
+        dummy.textContent = rivi;
+        if (dummy.clientWidth > maxTekstinLeveys) {
+          maxTekstinLeveys = dummy.clientWidth;
+        }
+      });
+    });
+    document.body.removeChild(dummy);
+
+    const kokonaisLeveys = maxTekstinLeveys + 10;
+    document.documentElement.style.setProperty('--name-col-width', `${kokonaisLeveys}px`);
+  }
+
+  function sekoita(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function haeAktiivisetIdt() {
+    const kortit = document.querySelectorAll('.card:not(.empty)');
+    const idt = new Set();
+    kortit.forEach(k => {
+      if (k.dataset.id !== undefined && k.dataset.id !== "") {
+        idt.add(parseInt(k.dataset.id, 10));
+      }
+    });
+    return idt;
+  }
+
+  function haeVapaaLaji() {
+    const aktiiviset = haeAktiivisetIdt();
+    let indeksi = nostopakka.findIndex(l => !aktiiviset.has(l.id));
+    
+    if (indeksi === -1) {
+      const vapaatLajit = kaikkiLajit
+        .map((laji, idx) => ({ ...laji, id: idx }))
+        .filter(laji => !aktiiviset.has(laji.id));
+      nostopakka = sekoita(vapaatLajit);
+      indeksi = 0;
+    }
+    
+    return nostopakka.splice(indeksi, 1)[0];
+  }
+
+  function aloitaPeli() {
+    asetaNimisarakkeenKiinteaLeveys();
+    document.body.classList.remove('flashing');
+
+    pisteet = 0;
+    aikaaJäljellä = 60;
+    peliKaynnissa = true;
+    valittuVasen = null;
+    valittuOikea = null;
+    
+    document.getElementById('points').innerText = pisteet;
+    document.getElementById('time-left').innerText = aikaaJäljellä;
+    document.getElementById('game-over').style.display = 'none';
+    document.getElementById('game-board').style.display = 'grid';
+
+    nostopakka = sekoita(kaikkiLajit.map((laji, idx) => ({ ...laji, id: idx })));
+    luoPelilauta();
+
+    clearInterval(ajastin);
+    ajastin = setInterval(() => {
+      aikaaJäljellä--;
+      document.getElementById('time-left').innerText = aikaaJäljellä;
+      if (aikaaJäljellä <= 0) lopetaPeli();
+    }, 1000);
+  }
+
+  function luoPelilauta() {
+    const vasenSarake = document.getElementById('left-column');
+    const oikeaSarake = document.getElementById('right-column');
+    vasenSarake.innerHTML = '';
+    oikeaSarake.innerHTML = '';
+
+    const laudanLajit = nostopakka.splice(0, 5);
+    const sekoitetutNimet = sekoita(laudanLajit);
+
+    laudanLajit.forEach(laji => {
+      vasenSarake.appendChild(luoKortti(laji, 'kuva'));
+    });
+
+    sekoitetutNimet.forEach(laji => {
+      oikeaSarake.appendChild(luoKortti(laji, 'nimi'));
+    });
+  }
+
+  function luoKortti(laji, tyyppi) {
+    const kortti = document.createElement('div');
+    kortti.className = 'card';
+    kortti.dataset.id = laji.id;
+    kortti.dataset.tyyppi = tyyppi;
+
+    const sisalto = document.createElement('div');
+    sisalto.className = 'card-content';
+
+    if (tyyppi === 'kuva') {
+      sisalto.innerHTML = `<img src="${laji.kuva}" alt="${laji.nimi}">`;
+    } else {
+      sisalto.innerHTML = `<div class="name">${muotoileNimi(laji.nimi)}</div>`;
+    }
+
+    kortti.appendChild(sisalto);
+
+    kortti.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      kasitteleValinta(kortti, tyyppi);
+    });
+
+    return kortti;
+  }
+
+  function kasitteleValinta(kortti, tyyppi) {
+    if (!peliKaynnissa || kortti.classList.contains('correct') || kortti.classList.contains('wrong') || kortti.classList.contains('empty') || kortti.classList.contains('locked')) return;
+
+    if (tyyppi === 'kuva') {
+      if (valittuVasen) valittuVasen.classList.remove('selected');
+      valittuVasen = kortti;
+      valittuVasen.classList.add('selected');
+    } else {
+      if (valittuOikea) valittuOikea.classList.remove('selected');
+      valittuOikea = kortti;
+      valittuOikea.classList.add('selected');
+    }
+
+    if (valittuVasen && valittuOikea) {
+      tarkistaPari();
+    }
+  }
+
+  function tarkistaPari() {
+    const vasenKortti = valittuVasen;
+    const oikeaKortti = valittuOikea;
+    valittuVasen = null;
+    valittuOikea = null;
+
+    if (vasenKortti.dataset.id === oikeaKortti.dataset.id) {
+      vasenKortti.className = 'card correct';
+      oikeaKortti.className = 'card correct';
+      pisteet += 2;
+      document.getElementById('points').innerText = pisteet;
+
+      setTimeout(() => {
+        vasenKortti.className = 'card empty';
+        oikeaKortti.className = 'card empty';
+
+        const vasenSisalto = vasenKortti.querySelector('.card-content');
+        const oikeaSisalto = oikeaKortti.querySelector('.card-content');
+
+        vasenSisalto.style.opacity = '0';
+        oikeaSisalto.style.opacity = '0';
+
+        setTimeout(() => {
+          korvaaKortit(vasenKortti);
+        }, 2000);
+      }, 200);
+
+    } else {
+      vasenKortti.className = 'card wrong';
+      oikeaKortti.className = 'card wrong';
+      pisteet -= 1;
+      document.getElementById('points').innerText = pisteet;
+
+      setTimeout(() => {
+        vasenKortti.className = 'card';
+        oikeaKortti.className = 'card';
+      }, 350);
+    }
+  }
+
+  function korvaaKortit(vasenKortti) {
+    if (!peliKaynnissa) return;
+
+    const uusiLaji = haeVapaaLaji();
+    const tyhjatOikeat = Array.from(document.querySelectorAll('#right-column .card.empty'));
+    
+    let kohdeOikea;
+    if (tyhjatOikeat.length > 0) {
+      kohdeOikea = tyhjatOikeat[Math.floor(Math.random() * tyhjatOikeat.length)];
+    } else {
+      kohdeOikea = document.querySelector('#right-column .card');
+    }
+
+    const vasenSisalto = vasenKortti.querySelector('.card-content');
+    const oikeaSisalto = kohdeOikea.querySelector('.card-content');
+
+    vasenKortti.dataset.id = uusiLaji.id;
+    vasenSisalto.innerHTML = `<img src="${uusiLaji.kuva}" alt="${uusiLaji.nimi}">`;
+    vasenKortti.className = 'card locked';
+
+    kohdeOikea.dataset.id = uusiLaji.id;
+    oikeaSisalto.innerHTML = `<div class="name">${muotoileNimi(uusiLaji.nimi)}</div>`;
+    kohdeOikea.className = 'card locked';
+
+    requestAnimationFrame(() => {
+      vasenSisalto.style.opacity = '0.5';
+      oikeaSisalto.style.opacity = '1';
+    });
+
+    setTimeout(() => {
+      if (!peliKaynnissa) return;
+
+      vasenKortti.className = 'card';
+      kohdeOikea.className = 'card';
+      vasenSisalto.style.opacity = '1';
+      oikeaSisalto.style.opacity = '1';
+    }, 1500);
+  }
+
+  function lopetaPeli() {
+    peliKaynnissa = false;
+    clearInterval(ajastin);
+    document.getElementById('game-board').style.display = 'none';
+
+    const restartBtn = document.getElementById('restart-btn');
+    restartBtn.disabled = true;
+    setTimeout(() => {
+      restartBtn.disabled = false;
+    }, 2000);
+
+    const storageKey = 'selkarangattomatmatsi_pistehistoria';
+    let historia = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const aiempiEnnatys = historia.length > 0 ? Math.max(...historia.map(h => h.pisteet)) : -Infinity;
+    const uusiEnnatys = pisteet > aiempiEnnatys;
+
+    const uusiTulos = { id: Date.now(), pisteet: pisteet };
+    historia.push(uusiTulos);
+
+    historia.sort((a, b) => b.pisteet - a.pisteet);
+    historia = historia.slice(0, 20);
+
+    localStorage.setItem(storageKey, JSON.stringify(historia));
+
+    const msgElement = document.getElementById('result-message');
+    if (uusiEnnatys) {
+      msgElement.innerText = `Mahtavaa! Teit ennätyksesi ${pisteet} pistettä!`;
+      document.body.classList.add('flashing');
+      setTimeout(() => {
+        document.body.classList.remove('flashing');
+      }, 5000);
+    } else {
+      msgElement.innerText = `Peli päättyi: sait ${pisteet} pistettä!`;
+    }
+
+    const scoreList = document.getElementById('score-list');
+    scoreList.innerHTML = '';
+
+    historia.forEach((item, index) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>#${index + 1}</span> <span>${item.pisteet} p</span>`;
+      if (item.id === uusiTulos.id) {
+        li.className = 'latest-score';
+      }
+      scoreList.appendChild(li);
+    });
+
+    document.getElementById('game-over').style.display = 'flex';
+  }
+
+  window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  aloitaPeli();
+</script>
+</body>
+</html>
