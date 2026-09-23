@@ -317,32 +317,32 @@
 
 <script>
   const kaikkiLajit = [
-    { kuva: "kuvat/Amiraaliperhonen.jpg", nimi: "Amiraaliperhonen" },
-    { kuva: "kuvat/Ampiainen.jpg", nimi: "Ampiainen" },
-    { kuva: "kuvat/Etana.jpg", nimi: "Etana" },
-    { kuva: "kuvat/Hopeatäplä.jpg", nimi: "Hopeatäplä" },
-    { kuva: "kuvat/Hyttysen toukka.jpg", nimi: "Hyttysen toukka" },
-    { kuva: "kuvat/Juotikas.jpg", nimi: "Juotikas" },
-    { kuva: "kuvat/Kimalainen.jpg", nimi: "Kimalainen" },
-    { kuva: "kuvat/Kotilo.jpg", nimi: "Kotilo" },
-    { kuva: "kuvat/Kukkakärpänen.jpg", nimi: "Kukkakärpänen" },
-    { kuva: "kuvat/Lanttuperhonen.jpg", nimi: "Lanttuperhonen" },
-    { kuva: "kuvat/Leppäkerttu.jpg", nimi: "Leppäkerttu" },
-    { kuva: "kuvat/Lukki.jpg", nimi: "Lukki" },
-    { kuva: "kuvat/Mehiläinen.jpg", nimi: "Mehiläinen" },
-    { kuva: "kuvat/Nokkosperhonen.jpg", nimi: "Nokkosperhonen" },
-    { kuva: "kuvat/Ohdakeperhonen.jpg", nimi: "Ohdakeperhonen" },
-    { kuva: "kuvat/Puutiainen.jpg", nimi: "Puutiainen" },
-    { kuva: "kuvat/Siira.jpg", nimi: "Siira" },
-    { kuva: "kuvat/Simpukka.jpg", nimi: "Simpukka" },
-    { kuva: "kuvat/Sitruunaperhonen.jpg", nimi: "Sitruunaperhonen" },
-    { kuva: "kuvat/Sudenkorennon toukka.jpg", nimi: "Sudenkorennon toukka" },
-    { kuva: "kuvat/Sudenkorento.jpg", nimi: "Sudenkorento" },
-    { kuva: "kuvat/Suruvaippa.jpg", nimi: "Suruvaippa" },
-    { kuva: "kuvat/Tesmaperhonen.jpg", nimi: "Tesmaperhonen" },
-    { kuva: "kuvat/Täplärapu.jpg", nimi: "Täplärapu" },
-    { kuva: "kuvat/Vesikirppu.jpg", nimi: "Vesikirppu" },
-    { kuva: "kuvat/Vesimittari.jpg", nimi: "Vesimittari" }
+    { kuva: "Kuvat/Amiraaliperhonen.jpg", nimi: "Amiraaliperhonen" },
+    { kuva: "Kuvat/Ampiainen.jpg", nimi: "Ampiainen" },
+    { kuva: "Kuvat/Etana.jpg", nimi: "Etana" },
+    { kuva: "Kuvat/Hopeatäplä.jpg", nimi: "Hopeatäplä" },
+    { kuva: "Kuvat/Hyttysen toukka.jpg", nimi: "Hyttysen toukka" },
+    { kuva: "Kuvat/Juotikas.jpg", nimi: "Juotikas" },
+    { kuva: "Kuvat/Kimalainen.jpg", nimi: "Kimalainen" },
+    { kuva: "Kuvat/Kotilo.jpg", nimi: "Kotilo" },
+    { kuva: "Kuvat/Kukkakärpänen.jpg", nimi: "Kukkakärpänen" },
+    { kuva: "Kuvat/Lanttuperhonen.jpg", nimi: "Lanttuperhonen" },
+    { kuva: "Kuvat/Leppäkerttu.jpg", nimi: "Leppäkerttu" },
+    { kuva: "Kuvat/Lukki.jpg", nimi: "Lukki" },
+    { kuva: "Kuvat/Mehiläinen.jpg", nimi: "Mehiläinen" },
+    { kuva: "Kuvat/Nokkosperhonen.jpg", nimi: "Nokkosperhonen" },
+    { kuva: "Kuvat/Ohdakeperhonen.jpg", nimi: "Ohdakeperhonen" },
+    { kuva: "Kuvat/Puutiainen.jpg", nimi: "Puutiainen" },
+    { kuva: "Kuvat/Siira.jpg", nimi: "Siira" },
+    { kuva: "Kuvat/Simpukka.jpg", nimi: "Simpukka" },
+    { kuva: "Kuvat/Sitruunaperhonen.jpg", nimi: "Sitruunaperhonen" },
+    { kuva: "Kuvat/Sudenkorennon toukka.jpg", nimi: "Sudenkorennon toukka" },
+    { kuva: "Kuvat/Sudenkorento.jpg", nimi: "Sudenkorento" },
+    { kuva: "Kuvat/Suruvaippa.jpg", nimi: "Suruvaippa" },
+    { kuva: "Kuvat/Tesmaperhonen.jpg", nimi: "Tesmaperhonen" },
+    { kuva: "Kuvat/Täplärapu.jpg", nimi: "Täplärapu" },
+    { kuva: "Kuvat/Vesikirppu.jpg", nimi: "Vesikirppu" },
+    { kuva: "Kuvat/Vesimittari.jpg", nimi: "Vesimittari" }
   ];
 
   const yhdyssanaMappi = {
@@ -381,6 +381,10 @@
       return yhdyssanaMappi[nimi];
     }
     return nimi;
+  }
+
+  function haeKuvaUrl(polku) {
+    return encodeURI(polku);
   }
 
   function asetaNimisarakkeenKiinteaLeveys() {
@@ -498,7 +502,7 @@
     sisalto.className = 'card-content';
 
     if (tyyppi === 'kuva') {
-      sisalto.innerHTML = `<img src="${laji.kuva}" alt="${laji.nimi}">`;
+      sisalto.innerHTML = `<img src="${haeKuvaUrl(laji.kuva)}" alt="${laji.nimi}">`;
     } else {
       sisalto.innerHTML = `<div class="name">${muotoileNimi(laji.nimi)}</div>`;
     }
@@ -588,7 +592,7 @@
     const oikeaSisalto = kohdeOikea.querySelector('.card-content');
 
     vasenKortti.dataset.id = uusiLaji.id;
-    vasenSisalto.innerHTML = `<img src="${uusiLaji.kuva}" alt="${uusiLaji.nimi}">`;
+    vasenSisalto.innerHTML = `<img src="${haeKuvaUrl(uusiLaji.kuva)}" alt="${uusiLaji.nimi}">`;
     vasenKortti.className = 'card locked';
 
     kohdeOikea.dataset.id = uusiLaji.id;
