@@ -384,7 +384,18 @@
   }
 
   function haeKuvaUrl(polku) {
-    return encodeURI(polku);
+    const normalized = String(polku || '').replace(/\\/g, '/');
+
+    if (!normalized) {
+      return '';
+    }
+
+    if (/^https?:\/\//i.test(normalized)) {
+      return normalized;
+    }
+
+    const rawBase = 'https://raw.githubusercontent.com/opeHeikki/Selkarangattomat-kuvamatsi/main/';
+    return `${rawBase}${encodeURI(normalized)}`;
   }
 
   function asetaNimisarakkeenKiinteaLeveys() {
